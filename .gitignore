@@ -26,4 +26,6 @@ yarn-error.log*
 
 # Documents and PDF PRDs
 *.pdf
+docs/MANUAL_TEST_RESULTS.md
+
 
