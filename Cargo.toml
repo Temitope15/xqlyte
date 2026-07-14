@@ -1,0 +1,10 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/engine",
+    "crates/rpc",
+    "crates/sdk-rust",
+    "crates/sdk-wasm",
+    "crates/cli",
+    "crates/api-server",
+]
