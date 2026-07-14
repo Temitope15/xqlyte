@@ -1,0 +1,9 @@
+{
+  "name": "xqlyte-js",
+  "version": "0.1.0",
+  "main": "index.js",
+  "type": "module",
+  "dependencies": {
+    "sdk-wasm": "file:../../crates/sdk-wasm/pkg"
+  }
+}

@@ -4,3 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+clap = { version = "4.5.23", features = ["derive"] }
+tokio = { version = "1.52.3", features = ["full"] }
+sdk-rust = { path = "../sdk-rust" }
+rpc = { path = "../rpc" }
+engine = { path = "../engine" }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.150"

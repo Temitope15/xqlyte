@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>XQlyte WASM Smoke Test</title>
+    <style>
+        body { font-family: sans-serif; background: #121214; color: #e4e4e7; padding: 2rem; }
+        pre { background: #18181b; padding: 1rem; border-radius: 6px; border: 1px solid #27272a; overflow-x: auto; }
+        .success { color: #4ade80; }
+        .fail { color: #f87171; }
+    </style>
+</head>
+<body>
+    <h1>XQlyte WASM Smoke Test</h1>
+    <div id="results">Running tests...</div>
+
+    <script type="module">
+        import init, { can_pay, diagnose_failure, confidence_score, best_asset, best_route, analyze_route, analyze_asset } from "./pkg/sdk_wasm.js";
+
+        async function runTests() {
+            try {
+                await init();
+                let resultsDiv = document.getElementById("results");
+                resultsDiv.innerHTML = "";
+
+                // Test 1: can_pay
+                const req = {
+                    sender: "alice",
+                    receiver: "bob",
+                    amount: 100.0,
+                    asset: "USDT",
+                    metadata: null
+                };
+                const resCanPay = await can_pay(req, "happy-path");
+                assert(resCanPay.status === "CanPay", "can_pay status should be CanPay");
+                log("can_pay() success:", resCanPay);
+
+                // Test 2: diagnose_failure
+                const resDiag = await diagnose_failure(req, "capacity-fail");
+                assert(resDiag.failure_category === "Capacity", "diagnose_failure category should be Capacity");
+                log("diagnose_failure() success:", resDiag);
+
+                // Test 3: confidence_score
+                const resConf = await confidence_score(req, "happy-path");
+                assert(resConf[0] > 80, "confidence_score should be > 80");
+                log("confidence_score() success:", resConf);
+
+                // Test 4: best_asset
+                const resAsset = await best_asset(req, "happy-path");
+                assert(resAsset[0] === "USDT", "best_asset should be USDT");
+                log("best_asset() success:", resAsset);
+
+                // Test 5: best_route
+                const resRoute = await best_route(req, "happy-path");
+                assert(resRoute[0].hops.length > 0, "best_route hops should be loaded");
+                log("best_route() success:", resRoute);
+
+                // Test 6: analyze_route
+                const resRouteAnalysis = await analyze_route(req, "happy-path");
+                assert(resRouteAnalysis.route_score > 0, "route score should be loaded");
+                log("analyze_route() success:", resRouteAnalysis);
+
+                // Test 7: analyze_asset
+                const resAssetAnalysis = await analyze_asset("USDT", "happy-path");
+                assert(resAssetAnalysis.is_supported === true, "USDT should be supported");
+                log("analyze_asset() success:", resAssetAnalysis);
+
+                resultsDiv.innerHTML += `<h2 class="success">✓ All Smoke Tests Passed!</h2>`;
+            } catch (err) {
+                console.error(err);
+                document.getElementById("results").innerHTML += `<h2 class="fail">✗ Test Failed: ${err}</h2>`;
+            }
+        }
+
+        function assert(condition, message) {
+            if (!condition) throw new Error(message);
+        }
+
+        function log(title, obj) {
+            let resultsDiv = document.getElementById("results");
+            resultsDiv.innerHTML += `<h3>${title}</h3><pre>${JSON.stringify(obj, null, 2)}</pre>`;
+        }
+
+        runTests();
+    </script>
+</body>
+</html>
