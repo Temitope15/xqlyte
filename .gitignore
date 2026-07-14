@@ -23,3 +23,7 @@ yarn-error.log*
 *.db-journal
 *.db-shm
 *.db-wal
+
+# Documents and PDF PRDs
+*.pdf
+
