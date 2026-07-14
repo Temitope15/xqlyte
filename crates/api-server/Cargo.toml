@@ -4,3 +4,13 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+engine = { path = "../engine" }
+rpc = { path = "../rpc" }
+sdk-rust = { path = "../sdk-rust" }
+axum = "0.7.5"
+tokio = { version = "1.52.3", features = ["full"] }
+rusqlite = { version = "0.31.0", features = ["bundled"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.150"
+tower-http = { version = "0.5.2", features = ["cors"] }
+chrono = { version = "0.4.38", features = ["serde"] }
