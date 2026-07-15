@@ -196,10 +196,14 @@ async fn main() {
 
 async fn handle_can_pay(
     State(state): State<AppState>,
-    Query(params): Query<CanPayParams>,
+    params: Option<Query<CanPayParams>>,
     Json(payload): Json<PaymentRequest>,
 ) -> (StatusCode, Json<PaymentConfidenceResult>) {
-    let scenario = get_scenario_from_params(params.scenario, params.payment_id);
+    let params_val = params.map(|Query(p)| p);
+    let scenario = get_scenario_from_params(
+        params_val.as_ref().and_then(|p| p.scenario.clone()),
+        params_val.as_ref().and_then(|p| p.payment_id.clone()),
+    );
     let mock_client = MockFiberRpcClient::new(scenario);
     let sdk = XqlyteClient::new(mock_client);
 
@@ -262,17 +266,24 @@ async fn handle_can_pay(
 
 async fn handle_diagnose(
     Path(payment_id): Path<String>,
-    Query(params): Query<DiagnoseParams>,
+    params: Option<Query<DiagnoseParams>>,
 ) -> (StatusCode, Json<FailureDiagnostics>) {
     let scenario = parse_scenario(&payment_id);
     let mock_client = MockFiberRpcClient::new(scenario);
     let sdk = XqlyteClient::new(mock_client);
 
+    let params_val = params.map(|Query(p)| p).unwrap_or(DiagnoseParams {
+        sender: None,
+        receiver: None,
+        amount: None,
+        asset: None,
+    });
+
     let req = PaymentRequest {
-        sender: params.sender.unwrap_or_else(|| "alice".to_string()),
-        receiver: params.receiver.unwrap_or_else(|| "bob".to_string()),
-        amount: params.amount.unwrap_or(100.0),
-        asset: params.asset.unwrap_or_else(|| "USDT".to_string()),
+        sender: params_val.sender.unwrap_or_else(|| "alice".to_string()),
+        receiver: params_val.receiver.unwrap_or_else(|| "bob".to_string()),
+        amount: params_val.amount.unwrap_or(100.0),
+        asset: params_val.asset.unwrap_or_else(|| "USDT".to_string()),
         metadata: None,
     };
 
@@ -291,10 +302,14 @@ async fn handle_diagnose(
 }
 
 async fn handle_confidence_score(
-    Query(params): Query<CanPayParams>,
+    params: Option<Query<CanPayParams>>,
     Json(payload): Json<PaymentRequest>,
 ) -> (StatusCode, Json<ScoreResponse>) {
-    let scenario = get_scenario_from_params(params.scenario, params.payment_id);
+    let params_val = params.map(|Query(p)| p);
+    let scenario = get_scenario_from_params(
+        params_val.as_ref().and_then(|p| p.scenario.clone()),
+        params_val.as_ref().and_then(|p| p.payment_id.clone()),
+    );
     let mock_client = MockFiberRpcClient::new(scenario);
     let sdk = XqlyteClient::new(mock_client);
 
@@ -305,10 +320,14 @@ async fn handle_confidence_score(
 }
 
 async fn handle_best_asset(
-    Query(params): Query<CanPayParams>,
+    params: Option<Query<CanPayParams>>,
     Json(payload): Json<PaymentRequest>,
 ) -> (StatusCode, Json<BestAssetResponse>) {
-    let scenario = get_scenario_from_params(params.scenario, params.payment_id);
+    let params_val = params.map(|Query(p)| p);
+    let scenario = get_scenario_from_params(
+        params_val.as_ref().and_then(|p| p.scenario.clone()),
+        params_val.as_ref().and_then(|p| p.payment_id.clone()),
+    );
     let mock_client = MockFiberRpcClient::new(scenario);
     let sdk = XqlyteClient::new(mock_client);
 
@@ -323,10 +342,14 @@ async fn handle_best_asset(
 }
 
 async fn handle_best_route(
-    Query(params): Query<CanPayParams>,
+    params: Option<Query<CanPayParams>>,
     Json(payload): Json<PaymentRequest>,
 ) -> (StatusCode, Json<BestRouteResponse>) {
-    let scenario = get_scenario_from_params(params.scenario, params.payment_id);
+    let params_val = params.map(|Query(p)| p);
+    let scenario = get_scenario_from_params(
+        params_val.as_ref().and_then(|p| p.scenario.clone()),
+        params_val.as_ref().and_then(|p| p.payment_id.clone()),
+    );
     let mock_client = MockFiberRpcClient::new(scenario);
     let sdk = XqlyteClient::new(mock_client);
 
@@ -342,16 +365,20 @@ async fn handle_best_route(
 
 async fn handle_route_analysis(
     Path(to): Path<String>,
-    Query(params): Query<RouteParams>,
+    params: Option<Query<RouteParams>>,
 ) -> (StatusCode, Json<RouteAnalysis>) {
-    let scenario = get_scenario_from_params(params.scenario, None);
+    let params_val = params.map(|Query(p)| p);
+    let scenario = get_scenario_from_params(
+        params_val.as_ref().and_then(|p| p.scenario.clone()),
+        None,
+    );
     let mock_client = MockFiberRpcClient::new(scenario);
     let sdk = XqlyteClient::new(mock_client);
 
     let req = PaymentRequest {
-        sender: params.sender.unwrap_or_else(|| "alice".to_string()),
+        sender: params_val.as_ref().and_then(|p| p.sender.clone()).unwrap_or_else(|| "alice".to_string()),
         receiver: to,
-        amount: params.amount.unwrap_or(100.0),
+        amount: params_val.as_ref().and_then(|p| p.amount).unwrap_or(100.0),
         asset: "USDT".to_string(),
         metadata: None,
     };
@@ -367,9 +394,13 @@ async fn handle_route_analysis(
 
 async fn handle_asset_analysis(
     Path(asset): Path<String>,
-    Query(params): Query<AssetParams>,
+    params: Option<Query<AssetParams>>,
 ) -> (StatusCode, Json<AssetAnalysis>) {
-    let scenario = get_scenario_from_params(params.scenario, None);
+    let params_val = params.map(|Query(p)| p);
+    let scenario = get_scenario_from_params(
+        params_val.as_ref().and_then(|p| p.scenario.clone()),
+        None,
+    );
     let mock_client = MockFiberRpcClient::new(scenario);
     let sdk = XqlyteClient::new(mock_client);
 
@@ -387,9 +418,9 @@ async fn handle_asset_analysis(
 
 async fn handle_logs(
     State(state): State<AppState>,
-    Query(params): Query<LogParams>,
+    params: Option<Query<LogParams>>,
 ) -> (StatusCode, Json<Vec<LogEntry>>) {
-    let limit = params.recent.unwrap_or(20);
+    let limit = params.map(|Query(p)| p.recent.unwrap_or(20)).unwrap_or(20);
     let db = state.db.lock().unwrap();
     let mut stmt = match db.prepare(
         "SELECT id, timestamp, sender, receiver, amount, asset, status, confidence_score, failure_category, reason, technical_reason, suggested_fix

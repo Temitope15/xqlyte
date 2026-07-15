@@ -73,7 +73,7 @@ export async function handleCanPay(argsText) {
     });
 
     if (!res.ok) {
-      const errText = await res.text().catch(() => "");
+      const errText = (await res.text().catch(() => "")).slice(0, 200);
       return `❌ Error: API server returned status ${res.status}. ${errText || ""}`;
     }
 
@@ -101,7 +101,7 @@ export async function handleWhyFail(argsText) {
   try {
     const res = await fetch(`${API_SERVER}/diagnose/${args.payment_id}`);
     if (!res.ok) {
-      const errText = await res.text().catch(() => "");
+      const errText = (await res.text().catch(() => "")).slice(0, 200);
       return `❌ Error: API server returned status ${res.status}. ${errText || ""}`;
     }
 
@@ -132,7 +132,7 @@ export async function handleBestAsset(argsText) {
     });
 
     if (!res.ok) {
-      const errText = await res.text().catch(() => "");
+      const errText = (await res.text().catch(() => "")).slice(0, 200);
       return `❌ Error: API server returned status ${res.status}. ${errText || ""}`;
     }
 
@@ -163,7 +163,7 @@ export async function handleBestRoute(argsText) {
     });
 
     if (!res.ok) {
-      const errText = await res.text().catch(() => "");
+      const errText = (await res.text().catch(() => "")).slice(0, 200);
       return `❌ Error: API server returned status ${res.status}. ${errText || ""}`;
     }
 
