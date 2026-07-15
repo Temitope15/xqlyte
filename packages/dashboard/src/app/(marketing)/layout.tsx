@@ -8,7 +8,7 @@ export default function MarketingLayout({
   return (
     <div className="grain flex min-h-screen flex-col bg-canvas">
       <Navbar />
-      <main className="relative flex flex-1 flex-col overflow-hidden pt-16">
+      <main className="relative flex flex-1 flex-col pt-16">
         {children}
       </main>
       <footer className="border-t border-border bg-canvas py-10">

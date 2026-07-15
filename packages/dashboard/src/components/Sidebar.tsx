@@ -23,28 +23,47 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar-logo">
-        XQ<span>lyte</span>
+    <aside className="sidebar flex flex-col justify-between h-full">
+      <div>
+        <Link href="/" className="sidebar-logo flex items-center hover:opacity-80 transition-opacity">
+          XQ<span>lyte</span>
+        </Link>
+        <nav>
+          <ul className="sidebar-menu">
+            {menuItems.map((item) => {
+              const isActive = pathname === item.path;
+              return (
+                <li
+                  key={item.path}
+                  className={`sidebar-item ${isActive ? "active" : ""}`}
+                >
+                  <Link href={item.path}>
+                    <span>{item.icon}</span>
+                    <span>{item.name}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
       </div>
-      <nav>
-        <ul className="sidebar-menu">
-          {menuItems.map((item) => {
-            const isActive = pathname === item.path;
-            return (
-              <li
-                key={item.path}
-                className={`sidebar-item ${isActive ? "active" : ""}`}
-              >
-                <Link href={item.path}>
-                  <span>{item.icon}</span>
-                  <span>{item.name}</span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+
+      <div className="pt-4 border-t border-white/[0.06] mt-auto flex flex-col gap-1">
+        <Link
+          href="/docs"
+          className="text-xs text-gray-400 hover:text-white hover:bg-white/[0.04] transition-all px-4 py-2 rounded-lg flex items-center gap-2 font-medium"
+        >
+          <span>📖</span>
+          <span>Documentation</span>
+        </Link>
+        <Link
+          href="/features"
+          className="text-xs text-gray-400 hover:text-white hover:bg-white/[0.04] transition-all px-4 py-2 rounded-lg flex items-center gap-2 font-medium"
+        >
+          <span>💡</span>
+          <span>Features & Bot</span>
+        </Link>
+      </div>
     </aside>
   );
 }

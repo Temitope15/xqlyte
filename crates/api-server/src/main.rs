@@ -4,6 +4,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
+use rpc::client::FiberRpcClient;
 use rpc::mock::{MockFiberRpcClient, MockScenario};
 use sdk_rust::XqlyteClient;
 use engine::types::*;
@@ -177,6 +178,8 @@ async fn main() {
         .route("/best-route", post(handle_best_route))
         .route("/route/:to", get(handle_route_analysis))
         .route("/asset/:asset", get(handle_asset_analysis))
+        .route("/topology/nodes", get(handle_topology_nodes))
+        .route("/topology/channels", get(handle_topology_channels))
         .route("/logs", get(handle_logs))
         .layer(cors)
         .with_state(shared_state);
@@ -424,4 +427,40 @@ async fn handle_logs(
     }
 
     (StatusCode::OK, Json(logs))
+}
+
+async fn handle_topology_nodes(
+    Query(params): Query<CanPayParams>,
+) -> (StatusCode, Json<Vec<NodeData>>) {
+    let scenario = get_scenario_from_params(params.scenario, params.payment_id);
+    let mock_client = MockFiberRpcClient::new(scenario);
+    
+    let node_ids = vec!["alice", "bob", "nodeA", "nodeB", "nodeC", "node_offline"];
+    let mut nodes = Vec::new();
+    for id in node_ids {
+        if let Ok(info) = mock_client.get_node_info(id).await {
+            nodes.push(info);
+        }
+    }
+    (StatusCode::OK, Json(nodes))
+}
+
+async fn handle_topology_channels(
+    Query(params): Query<CanPayParams>,
+) -> (StatusCode, Json<Vec<ChannelData>>) {
+    let scenario = get_scenario_from_params(params.scenario, params.payment_id);
+    let mock_client = MockFiberRpcClient::new(scenario);
+    
+    let node_ids = vec!["alice", "nodeA", "nodeB", "nodeC"];
+    let mut channels = Vec::new();
+    for id in node_ids {
+        if let Ok(chans) = mock_client.list_channels(id).await {
+            channels.extend(chans);
+        }
+    }
+    // Deduplicate channels by channel_id
+    channels.sort_by(|a, b| a.channel_id.cmp(&b.channel_id));
+    channels.dedup_by(|a, b| a.channel_id == b.channel_id);
+    
+    (StatusCode::OK, Json(channels))
 }

@@ -252,7 +252,8 @@ export default function MarketingLandingPage() {
           <div className="mt-10">
             <Link
               href="/docs"
-              className="inline-block rounded-full bg-foreground px-6 py-2.5 text-sm font-medium text-black transition-all duration-200 hover:bg-foreground/90 active:scale-[0.98]"
+              style={{ color: "#000000" }}
+              className="inline-block rounded-full bg-white px-6 py-2.5 text-sm font-semibold transition-all duration-200 hover:bg-white/95 active:scale-[0.98]"
             >
               Start integrating →
             </Link>

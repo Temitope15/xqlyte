@@ -24,6 +24,47 @@ export default function DocsPage() {
   const [modalSearchQuery, setModalSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Deep linking: switch to the page containing the hash section and scroll to it
+  useEffect(() => {
+    const handleHashAndParams = () => {
+      // 1. Query parameter check (e.g. ?tab=rust-sdk)
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      if (tabParam && PAGES[tabParam]) {
+        setActivePage(tabParam);
+        return;
+      }
+
+      // 2. Hash check (e.g. #cli-setup)
+      const hash = window.location.hash.replace("#", "");
+      if (hash) {
+        for (const page of Object.values(PAGES)) {
+          if (page.id === hash) {
+            setActivePage(page.id);
+            return;
+          }
+          const hasHeading = page.headings.some((h) => h.id === hash);
+          if (hasHeading) {
+            setActivePage(page.id);
+            setTimeout(() => {
+              scrollToHeading(hash);
+            }, 150);
+            return;
+          }
+        }
+      }
+    };
+
+    // Run on mount
+    handleHashAndParams();
+
+    // Listen to hash changes (for clicking links inside the docs page)
+    window.addEventListener("hashchange", handleHashAndParams);
+    return () => {
+      window.removeEventListener("hashchange", handleHashAndParams);
+    };
+  }, []);
+
   // Copy to clipboard helper
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -256,7 +297,7 @@ export default function DocsPage() {
           <h2 id="explore-docs" className="font-inter text-2xl sm:text-3xl font-bold text-white border-b border-white/5 pb-2 pt-10 mb-6">
             Explore the Documentation
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 my-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-8">
             {/* Architecture */}
             <div 
               onClick={() => setActivePage("architecture")}
@@ -617,7 +658,7 @@ export default function DocsPage() {
             XQlyte features a trait-based network layer that isolates the diagnostic tools from the target node environment. It operates in two modes:
           </p>
           <ul className="list-disc list-inside space-y-3.5 font-atkinson text-base sm:text-[17px] text-gray-300 font-light pl-2 mb-6">
-            <li><strong className="text-white">Mock Mode (Offline):</strong> Default mode. Intercepts RPC requests and provides static, deterministic network mock shapes. This is useful for running unit tests or simulating channel failures in isolation.</li>
+            <li><strong className="text-white">Simulation Mode (Offline):</strong> Default mode. Intercepts RPC requests and provides static, deterministic network simulation structures. This is useful for running unit tests or simulating channel failures in isolation.</li>
             <li><strong className="text-white">Live Mode (Online):</strong> Connects directly to a running Fiber testnet/mainnet node (<code className="font-mono text-xs px-1.5 py-0.5 bg-white/5 text-cyan rounded">fnn</code>) via JSON-RPC, extracting real-time balance sheets and gossip channel routes.</li>
           </ul>
         </div>
@@ -744,7 +785,7 @@ export default function DocsPage() {
               {/* Step 3: RPC Fetch */}
               <rect x="295" y="110" width="115" height="50" rx="8" fill="#11161f" stroke="#737373" strokeWidth="1.2" strokeOpacity="0.4" />
               <text x="352" y="134" fill="#ffffff" fontSize="11" fontFamily="Geist Mono" textAnchor="middle" fontWeight="bold">3. Node RPC Fetch</text>
-              <text x="352" y="148" fill="#8b5cf6" fontSize="8" fontFamily="Geist Mono" textAnchor="middle">live / mock client</text>
+              <text x="352" y="148" fill="#8b5cf6" fontSize="8" fontFamily="Geist Mono" textAnchor="middle">live / simulator client</text>
 
               <line x1="410" y1="135" x2="445" y2="135" stroke="#737373" strokeWidth="1.2" markerEnd="url(#arrowHead)" />
 
@@ -1003,7 +1044,7 @@ export default function DocsPage() {
           <p className="font-atkinson text-base sm:text-[17px] text-gray-300 leading-relaxed font-light mb-5">
             Import the WASM package from the local workspace package directory:
           </p>
-          <CodeBlock code="npm install packages/xqlyte-js" language="bash" id="wasm-install-code" />
+          <CodeBlock code="npm install ./packages/xqlyte-js" language="bash" id="wasm-install-code" />
 
           <h2 id="wasm-usage" className="font-inter text-2xl sm:text-3xl font-bold text-white border-b border-white/5 pb-2 pt-6 mb-4">
             Integration Example
@@ -1097,7 +1138,7 @@ async fn main() {
           <div className="space-y-6 font-atkinson text-base sm:text-[17px] text-gray-300 font-light my-6">
             <div className="p-5 border border-white/5 bg-white/[0.01] rounded-xl">
               <strong className="text-white font-inter text-sm uppercase tracking-wider block mb-1">Check Path Feasibility:</strong>
-              Check if a payment can route through the network. Supports mock failure scenario triggers:
+              Check if a payment can route through the network. Supports simulation failure scenario triggers:
               <CodeBlock code="xqlyte can-pay --sender alice --receiver bob --amount 100 --asset USDT --scenario capacity-fail" language="bash" id="cli-cmd-canpay" />
             </div>
             <div className="p-5 border border-white/5 bg-white/[0.01] rounded-xl">
@@ -1219,7 +1260,7 @@ async fn main() {
           <p className="font-atkinson text-base sm:text-[17px] text-gray-300 leading-relaxed font-light mb-5">
             Set up the bot using Node.js:
           </p>
-          <CodeBlock code="cd packages/bot&#10;npm install&#10;npm start" language="bash" id="bot-run-code" />
+          <CodeBlock code="cd packages/bot && npm install && npm start" language="bash" id="bot-run-code" />
 
           <h2 id="bot-commands" className="font-inter text-2xl sm:text-3xl font-bold text-white border-b border-white/5 pb-2 pt-6 mb-4">
             Slash Commands
@@ -1229,20 +1270,24 @@ async fn main() {
           </p>
           <div className="space-y-6 font-atkinson text-base sm:text-[17px] text-gray-300 font-light my-6">
             <div className="p-5 border border-white/5 bg-white/[0.01] rounded-xl">
-              <strong className="text-white font-mono text-[13px] sm:text-sm block mb-1">/can_pay [sender] [receiver] [amount] [asset]</strong>
+              <strong className="text-white font-mono text-[13px] sm:text-sm block mb-1">/canpay [sender] [receiver] [amount] [asset]</strong>
               Queries route viability, returning the feasibility status and confidence score.
             </div>
             <div className="p-5 border border-white/5 bg-white/[0.01] rounded-xl">
-              <strong className="text-white font-mono text-[13px] sm:text-sm block mb-1">/diagnose [scenario]</strong>
-              Triggers a mock transaction failure (e.g. <code className="font-mono text-xs text-red-400">capacity-fail</code>) to inspect technical details and recovery steps.
+              <strong className="text-white font-mono text-[13px] sm:text-sm block mb-1">/whyfail [payment_id]</strong>
+              Diagnoses a payment failure scenario (e.g. <code className="font-mono text-xs text-red-400">capacity-fail</code>) to inspect technical details and suggested remedies.
             </div>
             <div className="p-5 border border-white/5 bg-white/[0.01] rounded-xl">
-              <strong className="text-white font-mono text-[13px] sm:text-sm block mb-1">/node_health</strong>
-              Lists active nodes, connected peer counts, and status flags.
+              <strong className="text-white font-mono text-[13px] sm:text-sm block mb-1">/bestasset [receiver] [amount]</strong>
+              Recommends the best asset for the target receiver based on route liquidity.
             </div>
             <div className="p-5 border border-white/5 bg-white/[0.01] rounded-xl">
-              <strong className="text-white font-mono text-[13px] sm:text-sm block mb-1">/logs</strong>
-              Retrieves the latest audit entries logged in the SQLite database.
+              <strong className="text-white font-mono text-[13px] sm:text-sm block mb-1">/bestroute [receiver] [asset]</strong>
+              Returns the highest-scoring route to the target peer.
+            </div>
+            <div className="p-5 border border-white/5 bg-white/[0.01] rounded-xl">
+              <strong className="text-white font-mono text-[13px] sm:text-sm block mb-1">/liquidity [channel]</strong>
+              Returns active inbound and outbound channel capacities.
             </div>
           </div>
         </div>
@@ -1280,7 +1325,7 @@ async fn main() {
               <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest font-mono">CATEGORY 2</span>
               <h3 className="text-lg font-bold text-white leading-tight">Node, Routing & Diagnostics</h3>
               <p className="font-atkinson text-xs sm:text-[13px] text-gray-400 font-light leading-relaxed">
-                Operators can debug payment failures via CLIs or local Axum databases. The system tracks routing metrics, translates low-level JSON-RPC parameters into structured categories, and provides offline Mock mode profiles to test node dropouts deterministically.
+                Operators can debug payment failures via CLIs or local Axum databases. The system tracks routing metrics, translates low-level JSON-RPC parameters into structured categories, and provides offline Simulation mode profiles to test node dropouts deterministically.
               </p>
             </div>
           </div>
@@ -1296,7 +1341,7 @@ async fn main() {
               {
                 title: "Functional Completeness",
                 rating: "Production Ready",
-                desc: "Features a complete pipeline from input validation, 5 parallel scoring analyzers, 8 diagnostic error classifiers, to automated human-readable remedy suggestions. Implements offline mock environments and live Fiber RPC integrations.",
+                desc: "Features a complete pipeline from input validation, 5 parallel scoring analyzers, 8 diagnostic error classifiers, to automated human-readable remedy suggestions. Implements offline simulated environments and live Fiber RPC integrations.",
               },
               {
                 title: "User Flow & Experience",
@@ -1336,7 +1381,7 @@ async fn main() {
               {
                 title: "Maintainability",
                 rating: "Clean Codebase",
-                desc: "Uses a clean workspace monorepo topology, standard lint rules, decoupling traits, and mock fixtures. Compiles in seconds with zero TypeScript or Rust warnings.",
+                desc: "Uses a clean workspace monorepo topology, standard lint rules, decoupling traits, and simulation fixtures. Compiles in seconds with zero TypeScript or Rust warnings.",
               },
               {
                 title: "Practical Value",
@@ -1408,7 +1453,7 @@ async fn main() {
             </div>
             <div className="grid grid-cols-12 border-b border-white/[0.02] px-5 py-4 text-gray-300 font-light">
               <div className="col-span-1 text-center font-bold">2</div>
-              <div className="col-span-4 font-mono text-xs">Verify CLI Mock Run</div>
+              <div className="col-span-4 font-mono text-xs">Verify CLI Simulator Run</div>
               <div className="col-span-7">Execute <code className="text-cyan">xqlyte can-pay --scenario capacity-fail</code>; returns score & Suggested Fix.</div>
             </div>
             <div className="grid grid-cols-12 border-b border-white/[0.02] px-5 py-4 text-gray-300 font-light">

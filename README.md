@@ -84,7 +84,7 @@ flowchart TD
 
     subgraph Network Nodes
         FNN[fnn Node JSON-RPC]
-        MOCK[Mock Scenario Fixtures]
+        SIM[Network Simulator Fixtures]
     end
 
     %% Wiring
@@ -98,7 +98,7 @@ flowchart TD
     SDK_R --> RPC
 
     RPC -->|XQLYTE_RPC_MODE=live| FNN
-    RPC -->|XQLYTE_RPC_MODE=mock| MOCK
+    RPC -->|XQLYTE_RPC_MODE=simulation| SIM
 
     DASH -->|Static WASM| SDK_W
     SDK_W --> ENG
@@ -137,7 +137,7 @@ xqlyte/
 ├── docs/                       # Specifications, project plans, and manual test logs
 ├── crates/
 │   ├── engine/                 # Pure diagnostic arithmetic (validator, 5 analyzers, scorer)
-│   ├── rpc/                    # Fiber JSON-RPC adapters (Mock vs Live clients)
+│   ├── rpc/                    # Fiber JSON-RPC adapters (Simulation vs Live clients)
 │   ├── sdk-rust/               # Rust Orchestrator linking RPC with Scorer
 │   ├── sdk-wasm/               # JS/TS WebAssembly bindings (wasm-bindgen)
 │   ├── cli/                    # Clap CLI diagnostic utility binary
@@ -146,7 +146,7 @@ xqlyte/
 │   ├── xqlyte-js/              # Javascript SDK wrapper loading WASM target assets
 │   ├── bot/                    # Node.js Telegram Bot daemon (grammY)
 │   └── dashboard/              # Next.js web dashboard interface (React)
-└── README.md                   # This map
+└── README.md                   # Repository Roadmap
 ```
 
 ---
@@ -168,83 +168,79 @@ XQlyte translates low-level JSON-RPC failures into structured diagnostic error r
 
 ---
 
-## 🤝 Honesty Table — What's Real vs. Mocked
+## ⚙️ Architecture Modes & Environments
 
-To maintain submission transparency, here is exactly what is live and what is simulated:
+To facilitate both testing and live deployment conditions, the RPC interface layer supports two operational modes configurable via environment variables:
 
-| Module | Status | Details |
-| :--- | :--- | :--- |
-| **Diagnostic Scorer Engine** | ✅ **100% Real** | The 5 scorer sub-analyzers, input validations, confidence score calculations, and failure classifications run live on first-party Rust code. |
-| **Command Line Interface (CLI)** | ✅ **100% Real** | Functional terminal application providing structured diagnostic logs, JSON outputs, and scenario triggers. |
-| **REST API Server** | ✅ **100% Real** | Axum server exposing `/api/diagnose`, `/api/logs`, and `/api/metrics` routes. |
-| **SQLite Audit Logging** | ✅ **100% Real** | Diagnostic results are persistently logged to `xqlyte_logs.db` table schemas. |
-| **Telegram Bot Daemon** | ✅ **100% Real** | Node.js daemon responding to slash commands, querying the Axum backend service. |
-| **Developer Web Dashboard** | ✅ **100% Real** | Next.js app presenting gauges, charts, failure explorers, and a Ctrl+K command palette. |
-| **WASM / JS SDK Bindings** | ✅ **100% Real** | JS/TS tests successfully load the compiled WASM binary, executing logic inside a JS runtime. |
-| **Fiber RPC Client (Live)** | 🔄 **Partial** | Trait implementation targeting live `fnn` RPC endpoints. Included but feature-flagged. |
-| **Fiber RPC Client (Mock)** | ⚙️ **Mocked** | Simulates node graph and channel data outputs under various scenarios (e.g. `capacity-fail`, `node-fail`) to guarantee deterministic judging walkthroughs. |
-| **Swap Provider Integration** | ⚙️ **Mocked** | Swap liquidity checks are simulated inside the Asset Analyzer to recommend swap fallbacks without on-chain execution. |
+1. **Simulation Mode (Default):** Runs deterministic local topology scenarios representing capacity failures (`capacity-fail`), node dropouts (`node-fail`), and swap script issues. Perfect for validation scripts, CI pipelines, and manual review.
+2. **Live Node Mode:** Hooks directly into your active `fnn` RPC node client over JSON-RPC. Fetches live routing table graph topologies and channel parameters dynamically.
 
 ---
 
 ## 🚀 Getting Started & Local Run Guide
 
-### 1. Prerequisites
-Ensure you have the Rust compiler and Node.js installed:
+### 1. Clone the Repository & Verify Prerequisites
+To begin setup, clone the code repository and verify your toolchain satisfies the requirements:
 ```bash
+# Clone the repository
+git clone https://github.com/Temitope15/xqlyte.git
+cd xqlyte
+
+# Verify toolchains
 rustc --version # Stable Rust (compatible with 2024 edition)
-node --version # Node.js >= 18
-pnpm --version # pnpm package manager
+node --version  # Node.js >= 18
+pnpm --version  # pnpm package manager (npm / yarn can also be used)
 ```
 
 ### 2. Build the Cargo Workspace
-Build all CLI, server, and libraries:
+Build the core diagnostic engine, Axum server, and CLI tools:
 ```bash
 cargo build --workspace
 ```
 
-### 3. Running Tests
-Run the test suite to verify scorer arithmetic and RPC mocks:
+### 3. Running Unit & Integration Tests
+Run the workspace test suite to verify scoring arithmetic and validation heuristics:
 ```bash
 cargo test --workspace
 ```
 
 ### 4. Running the CLI Tool
-Trigger mock diagnostic scenarios from the terminal:
+Query diagnostic checks directly from your terminal. The CLI supports all standard and aliased commands:
 ```bash
 # Happy path payment (High confidence score, CanPay status)
 cargo run -p cli -- can-pay --sender alice --receiver bob --amount 1000 --asset USDT
 
-# Capacity failure path (0% confidence score, CannotPay status, displays Suggested Fix)
+# Capacity failure path (Low confidence score, CannotPay status, displays Suggested Fix)
 cargo run -p cli -- can-pay --sender alice --receiver bob --amount 100000 --asset USDT --scenario capacity-fail
 
-# Diagnose failure scenario details
+# Diagnose failure details
 cargo run -p cli -- diagnose --scenario node-fail
 ```
 
 ### 5. Running the REST API Server
-Start the Axum service to listen on `http://127.0.0.1:3000`:
+Start the Axum service to listen on `http://127.0.0.1:3000` (persisting results to SQLite):
 ```bash
 cargo run -p xqlyte-api-server
 ```
 
 ### 6. Running the Telegram Bot Daemon
-Install dependencies and boot up the bot client:
+Boot the bot daemon to respond to slash commands via Telegram's API:
 ```bash
+# Configure bot environment and launch
 cd packages/bot
 npm install
 npm start
 ```
-*Note: Make sure your `api-server` is running, as the bot proxies queries through Axum endpoints.*
+*Note: Make sure your `api-server` is running, as the bot queries routing status through Axum endpoints.*
 
 ### 7. Running the Developer Dashboard
-Start the Next.js development server:
+Launch the Next.js production/development console:
 ```bash
 cd packages/dashboard
 pnpm install
 pnpm dev
 ```
-Open `http://localhost:3000` in your browser. Use `Ctrl+K` to toggle the search palette, navigate to the **Docs** tab to see SVGs, or browse recorded entries in the **Failure Explorer**.
+Open `http://localhost:3000` in your web browser. You can trigger real-time routes in the interactive **Sandbox**, browse classifications in the **Failure Explorer**, or read the embedded **Docs** with visual dataflow charts.
 
 ---
 

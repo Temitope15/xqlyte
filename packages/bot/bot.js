@@ -73,7 +73,8 @@ export async function handleCanPay(argsText) {
     });
 
     if (!res.ok) {
-      return "❌ Error: API server returned failure status.";
+      const errText = await res.text().catch(() => "");
+      return `❌ Error: API server returned status ${res.status}. ${errText || ""}`;
     }
 
     const data = await res.json();
@@ -100,7 +101,8 @@ export async function handleWhyFail(argsText) {
   try {
     const res = await fetch(`${API_SERVER}/diagnose/${args.payment_id}`);
     if (!res.ok) {
-      return "❌ Error: API server returned failure status.";
+      const errText = await res.text().catch(() => "");
+      return `❌ Error: API server returned status ${res.status}. ${errText || ""}`;
     }
 
     const data = await res.json();
@@ -130,7 +132,8 @@ export async function handleBestAsset(argsText) {
     });
 
     if (!res.ok) {
-      return "❌ Error: API server returned failure status.";
+      const errText = await res.text().catch(() => "");
+      return `❌ Error: API server returned status ${res.status}. ${errText || ""}`;
     }
 
     const data = await res.json();
@@ -160,7 +163,8 @@ export async function handleBestRoute(argsText) {
     });
 
     if (!res.ok) {
-      return "❌ Error: API server returned failure status.";
+      const errText = await res.text().catch(() => "");
+      return `❌ Error: API server returned status ${res.status}. ${errText || ""}`;
     }
 
     const data = await res.json();
@@ -243,6 +247,20 @@ _Examples:_
 
     bot.start();
     console.log("XQlyte Telegram Bot started...");
+
+    // Start a dummy HTTP server so Render Web Service port check passes successfully
+    const port = process.env.PORT || 10000;
+    import("node:http").then(({ createServer }) => {
+      createServer((req, res) => {
+        res.writeHead(200, { "Content-Type": "text/plain" });
+        res.end("XQlyte Telegram Bot is running.");
+      }).listen(port, () => {
+        console.log(`Dummy HTTP server listening on port ${port} to satisfy Render port scanner.`);
+      });
+    }).catch((err) => {
+      console.error("Failed to start dummy HTTP server:", err);
+    });
+
   }).catch((e) => {
     console.error("Failed to load grammy library", e);
   });

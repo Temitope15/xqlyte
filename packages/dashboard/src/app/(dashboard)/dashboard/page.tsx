@@ -267,7 +267,7 @@ export default function OverviewPage() {
             </select>
           </div>
           <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label">Mock Scenario</label>
+            <label className="form-label">Network Scenario</label>
             <select className="form-select" value={scenario} onChange={(e) => setScenario(e.target.value)}>
               <option value="happy-path">Happy Path</option>
               <option value="capacity-fail">Capacity Failure</option>

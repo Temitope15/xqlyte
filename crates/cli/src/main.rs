@@ -16,10 +16,10 @@ struct Cli {
 enum Commands {
     #[command(about = "Check payment feasibility and confidence score")]
     CanPay {
-        #[arg(long, short = 'f')]
+        #[arg(long, short = 'f', alias = "sender")]
         from: String,
 
-        #[arg(long, short = 't')]
+        #[arg(long, short = 't', alias = "receiver")]
         to: String,
 
         #[arg(long, short = 'n')]
@@ -37,13 +37,13 @@ enum Commands {
 
     #[command(about = "Diagnose a payment routing failure and return failure taxonomy diagnostics")]
     Diagnose {
-        #[arg(long, short = 'p')]
+        #[arg(long, short = 'p', alias = "scenario")]
         payment_id: String,
 
-        #[arg(long, short = 'f', default_value = "alice")]
+        #[arg(long, short = 'f', default_value = "alice", alias = "sender")]
         from: String,
 
-        #[arg(long, short = 't', default_value = "bob")]
+        #[arg(long, short = 't', default_value = "bob", alias = "receiver", alias = "peer")]
         to: String,
 
         #[arg(long, short = 'n', default_value = "100.0")]
@@ -58,7 +58,7 @@ enum Commands {
 
     #[command(about = "Retrieve the best route and analyze hops")]
     Route {
-        #[arg(long, short = 't')]
+        #[arg(long, short = 't', alias = "receiver", alias = "peer")]
         to: String,
 
         #[arg(long, short = 'a')]
