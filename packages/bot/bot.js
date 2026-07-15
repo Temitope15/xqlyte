@@ -74,7 +74,7 @@ export async function handleCanPay(argsText) {
 
     if (!res.ok) {
       const errText = (await res.text().catch(() => "")).slice(0, 200);
-      return `❌ Error: API server returned status ${res.status}. ${errText || ""}`;
+      return `❌ *Error: API server returned status ${res.status}*\n\`\`\`\n${errText || ""}\n\`\`\``;
     }
 
     const data = await res.json();
@@ -102,7 +102,7 @@ export async function handleWhyFail(argsText) {
     const res = await fetch(`${API_SERVER}/diagnose/${args.payment_id}`);
     if (!res.ok) {
       const errText = (await res.text().catch(() => "")).slice(0, 200);
-      return `❌ Error: API server returned status ${res.status}. ${errText || ""}`;
+      return `❌ *Error: API server returned status ${res.status}*\n\`\`\`\n${errText || ""}\n\`\`\``;
     }
 
     const data = await res.json();
@@ -133,7 +133,7 @@ export async function handleBestAsset(argsText) {
 
     if (!res.ok) {
       const errText = (await res.text().catch(() => "")).slice(0, 200);
-      return `❌ Error: API server returned status ${res.status}. ${errText || ""}`;
+      return `❌ *Error: API server returned status ${res.status}*\n\`\`\`\n${errText || ""}\n\`\`\``;
     }
 
     const data = await res.json();
@@ -164,7 +164,7 @@ export async function handleBestRoute(argsText) {
 
     if (!res.ok) {
       const errText = (await res.text().catch(() => "")).slice(0, 200);
-      return `❌ Error: API server returned status ${res.status}. ${errText || ""}`;
+      return `❌ *Error: API server returned status ${res.status}*\n\`\`\`\n${errText || ""}\n\`\`\``;
     }
 
     const data = await res.json();
