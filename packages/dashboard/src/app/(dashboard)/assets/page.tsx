@@ -10,7 +10,7 @@ interface AssetAnalysis {
   average_fee: number;
 }
 
-const BACKEND_URL = "http://localhost:3000";
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
 export default function AssetAnalyticsPage() {
   const [assetName, setAssetName] = useState("USDT");

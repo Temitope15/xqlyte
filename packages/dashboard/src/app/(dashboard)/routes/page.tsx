@@ -17,7 +17,7 @@ interface RouteAnalysis {
   hops: HopAnalysis[];
 }
 
-const BACKEND_URL = "http://localhost:3000";
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
 export default function RouteAnalyticsPage() {
   const [receiver, setReceiver] = useState("bob");

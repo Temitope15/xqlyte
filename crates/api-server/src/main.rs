@@ -182,10 +182,12 @@ async fn main() {
         .with_state(shared_state);
 
     // 4. Start Axum server
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")
+    let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
+    let addr = format!("0.0.0.0:{}", port);
+    let listener = tokio::net::TcpListener::bind(&addr)
         .await
         .unwrap();
-    println!("XQlyte API Server started on http://localhost:3000");
+    println!("XQlyte API Server started on http://{}", addr);
     axum::serve(listener, app).await.unwrap();
 }
 
