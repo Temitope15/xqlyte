@@ -10,7 +10,7 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
-  { name: "Overview", path: "/", icon: "📊" },
+  { name: "Overview", path: "/dashboard", icon: "📊" },
   { name: "Failure Explorer", path: "/failures", icon: "🔍" },
   { name: "Route Analytics", path: "/routes", icon: "🗺️" },
   { name: "Asset Analytics", path: "/assets", icon: "🪙" },

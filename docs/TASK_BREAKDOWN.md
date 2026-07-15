@@ -44,20 +44,20 @@
 - [x] 5.2 Wire remaining functions: `best_asset`, `best_route`, `analyze_route`, `analyze_asset`, `log_result`.
 
 ## Phase 6 — CLI
-- [ ] 6.1 `xqlyte can-pay` + `xqlyte diagnose`, both human and `--json` output, against mock RPC. Snapshot-test both output formats.
-- [ ] 6.2 Remaining commands: `route`, `asset`, `liquidity`, `node`, `log`.
+- [x] 6.1 `xqlyte can-pay` + `xqlyte diagnose`, both human and `--json` output, against mock RPC. Snapshot-test both output formats.
+- [x] 6.2 Remaining commands: `route`, `asset`, `liquidity`, `node`, `log`.
 
 ## Phase 7 — WASM + JS SDK
-- [ ] 7.1 `wasm-pack build --target web` producing a working `pkg/`, smoke-tested via a minimal static HTML page.
-- [ ] 7.2 JS SDK wrapper package.
+- [x] 7.1 `wasm-pack build --target web` producing a working `pkg/`, smoke-tested via a minimal static HTML page.
+- [x] 7.2 JS SDK wrapper package.
 
 ## Phase 8 — API server + log store + Dashboard + Bot
-- [ ] 8.1 `api-server` crate: `/can-pay` + `/diagnose/:id` only, mock RPC backed.
-- [ ] 8.2 Log store (SQLite or JSONL) + `log_result` wired + `/logs` endpoint + `xqlyte log` CLI command.
-- [ ] 8.3 Dashboard scaffold (Next.js) + Overview page reading `/logs`.
-- [ ] 8.4 Dashboard Failure Explorer page.
-- [ ] 8.5 Telegram bot: `/canpay` + `/whyfail` only, against the API server.
-- [ ] 8.6 Remaining API endpoints + remaining dashboard pages + remaining bot commands.
+- [x] 8.1 `api-server` crate: `/can-pay` + `/diagnose/:id` only, mock RPC backed.
+- [x] 8.2 Log store (SQLite or JSONL) + `log_result` wired + `/logs` endpoint + `xqlyte log` CLI command.
+- [x] 8.3 Dashboard scaffold (Next.js) + Overview page reading `/logs`.
+- [x] 8.4 Dashboard Failure Explorer page.
+- [x] 8.5 Telegram bot: `/canpay` + `/whyfail` only, against the API server.
+- [x] 8.6 Remaining API endpoints + remaining dashboard pages + remaining bot commands.
 
 ## Phase 9 — Live RPC integration
 - [ ] 9.1 `LiveFiberRpcClient` talking to a real `fnn` testnet node. Switch via `--live` flag or env-var.
