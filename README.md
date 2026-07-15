@@ -11,8 +11,7 @@
 
 **Built for the Gone in 60ms: Fiber Network Infrastructure Hackathon · Category 1 (Wallet/Payment UX) & Category 2 (Node/Diagnostics)**
 
-[**▶ Watch the 5-Minute Technical Demo**](https://video.xqlyte.com) · [**Live Documentation Platform**](http://localhost:3000/docs)
-
+[**▶ Watch the 5-Minute Technical Demo**](https://video.xqlyte.com) · [**Live Documentation Platform**](https://xqlyte.vercel.app/docs)
 ---
 
 ## 📖 The Problem — UX Churn & Blind Routing in Off-Chain Payments
