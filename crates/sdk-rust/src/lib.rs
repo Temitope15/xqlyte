@@ -5,7 +5,6 @@ pub struct XqlyteClient<C: FiberRpcClient> {
     rpc_client: C,
 }
 
-
 impl<C: FiberRpcClient> XqlyteClient<C> {
     pub fn new(rpc_client: C) -> Self {
         Self { rpc_client }
@@ -15,10 +14,18 @@ impl<C: FiberRpcClient> XqlyteClient<C> {
         &self.rpc_client
     }
 
-    pub async fn can_pay(&self, request: PaymentRequest) -> Result<PaymentConfidenceResult, RpcError> {
+    pub async fn can_pay(
+        &self,
+        request: PaymentRequest,
+    ) -> Result<PaymentConfidenceResult, RpcError> {
         let route = self
             .rpc_client
-            .build_route(&request.sender, &request.receiver, request.amount, &request.asset)
+            .build_route(
+                &request.sender,
+                &request.receiver,
+                request.amount,
+                &request.asset,
+            )
             .await
             .ok();
 
@@ -42,7 +49,11 @@ impl<C: FiberRpcClient> XqlyteClient<C> {
             Err(_) => false,
         };
 
-        let swap_data = self.rpc_client.get_swap_info(&request.asset, "CKB").await.ok();
+        let swap_data = self
+            .rpc_client
+            .get_swap_info(&request.asset, "CKB")
+            .await
+            .ok();
 
         let is_missing_data = route.is_none();
 
@@ -67,7 +78,12 @@ impl<C: FiberRpcClient> XqlyteClient<C> {
     ) -> Result<FailureDiagnostics, RpcError> {
         let route = self
             .rpc_client
-            .build_route(&request.sender, &request.receiver, request.amount, &request.asset)
+            .build_route(
+                &request.sender,
+                &request.receiver,
+                request.amount,
+                &request.asset,
+            )
             .await
             .ok();
 
@@ -91,7 +107,11 @@ impl<C: FiberRpcClient> XqlyteClient<C> {
             Err(_) => false,
         };
 
-        let swap_data = self.rpc_client.get_swap_info(&request.asset, "CKB").await.ok();
+        let swap_data = self
+            .rpc_client
+            .get_swap_info(&request.asset, "CKB")
+            .await
+            .ok();
 
         let result = engine::diagnose_failure(
             &request,
@@ -107,28 +127,46 @@ impl<C: FiberRpcClient> XqlyteClient<C> {
         Ok(result)
     }
 
-    pub async fn confidence_score(&self, request: PaymentRequest) -> Result<(u8, Vec<RiskFactor>), RpcError> {
+    pub async fn confidence_score(
+        &self,
+        request: PaymentRequest,
+    ) -> Result<(u8, Vec<RiskFactor>), RpcError> {
         let res = self.can_pay(request).await?;
         Ok((res.confidence_score, res.risk_factors))
     }
 
-    pub async fn best_asset(&self, request: PaymentRequest) -> Result<(String, u8, String), RpcError> {
+    pub async fn best_asset(
+        &self,
+        request: PaymentRequest,
+    ) -> Result<(String, u8, String), RpcError> {
         let asset_info = self.rpc_client.get_asset_info(&request.asset).await;
         let asset_supported = match asset_info {
             Ok(a) => a.is_supported,
             Err(_) => false,
         };
 
-        let swap_data = self.rpc_client.get_swap_info(&request.asset, "CKB").await.ok();
+        let swap_data = self
+            .rpc_client
+            .get_swap_info(&request.asset, "CKB")
+            .await
+            .ok();
 
         let result = engine::best_asset(&request, asset_supported, swap_data.as_ref());
         Ok(result)
     }
 
-    pub async fn best_route(&self, request: PaymentRequest) -> Result<(RouteSummary, u8, String), RpcError> {
+    pub async fn best_route(
+        &self,
+        request: PaymentRequest,
+    ) -> Result<(RouteSummary, u8, String), RpcError> {
         let route = self
             .rpc_client
-            .build_route(&request.sender, &request.receiver, request.amount, &request.asset)
+            .build_route(
+                &request.sender,
+                &request.receiver,
+                request.amount,
+                &request.asset,
+            )
             .await
             .ok();
 
@@ -153,7 +191,12 @@ impl<C: FiberRpcClient> XqlyteClient<C> {
     pub async fn analyze_route(&self, request: PaymentRequest) -> Result<RouteAnalysis, RpcError> {
         let route = self
             .rpc_client
-            .build_route(&request.sender, &request.receiver, request.amount, &request.asset)
+            .build_route(
+                &request.sender,
+                &request.receiver,
+                request.amount,
+                &request.asset,
+            )
             .await?;
 
         let mut hop_nodes = Vec::new();
@@ -181,7 +224,8 @@ impl<C: FiberRpcClient> XqlyteClient<C> {
 
         let swap_data = self.rpc_client.get_swap_info(asset, "CKB").await.ok();
 
-        let result = engine::analyze_asset_compatibility(asset, asset_supported, swap_data.as_ref());
+        let result =
+            engine::analyze_asset_compatibility(asset, asset_supported, swap_data.as_ref());
         Ok(result)
     }
 

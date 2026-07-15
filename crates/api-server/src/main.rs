@@ -1,13 +1,13 @@
 use axum::{
+    Json, Router,
     extract::{Path, Query, State},
     http::StatusCode,
     routing::{get, post},
-    Json, Router,
 };
+use engine::types::*;
 use rpc::client::FiberRpcClient;
 use rpc::mock::{MockFiberRpcClient, MockScenario};
 use sdk_rust::XqlyteClient;
-use engine::types::*;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use tower_http::cors::{Any, CorsLayer};
@@ -135,18 +135,36 @@ async fn main() {
     .expect("Failed to create table 'logs'");
 
     // Seed initial mock log entries if database is empty
-    let count: i64 = conn.query_row("SELECT count(*) FROM logs", [], |row| row.get(0)).unwrap_or(0);
+    let count: i64 = conn
+        .query_row("SELECT count(*) FROM logs", [], |row| row.get(0))
+        .unwrap_or(0);
     if count == 0 {
         let sample_logs = vec![
             (
-                "2026-07-14T04:22:30Z", "alice", "bob", 100.0, "USDT", "CanPay", 92,
-                None, "Payment feasibility is high. Sufficient liquidity and stable route detected.",
-                "route=30, asset=20, liquidity=30, fee=4, node=8, missing_data=false", "None required."
+                "2026-07-14T04:22:30Z",
+                "alice",
+                "bob",
+                100.0,
+                "USDT",
+                "CanPay",
+                92,
+                None,
+                "Payment feasibility is high. Sufficient liquidity and stable route detected.",
+                "route=30, asset=20, liquidity=30, fee=4, node=8, missing_data=false",
+                "None required.",
             ),
             (
-                "2026-07-14T04:23:15Z", "alice", "bob", 1500.0, "USDT", "CannotPay", 0,
-                Some("Capacity"), "Insufficient balance/liquidity in channels along the routing path.",
-                "Channel local balance is less than the requested payment amount.", "add liquidity / rebalance / reduce amount"
+                "2026-07-14T04:23:15Z",
+                "alice",
+                "bob",
+                1500.0,
+                "USDT",
+                "CannotPay",
+                0,
+                Some("Capacity"),
+                "Insufficient balance/liquidity in channels along the routing path.",
+                "Channel local balance is less than the requested payment amount.",
+                "add liquidity / rebalance / reduce amount",
             ),
         ];
 
@@ -187,9 +205,7 @@ async fn main() {
     // 4. Start Axum server
     let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
     let addr = format!("0.0.0.0:{}", port);
-    let listener = tokio::net::TcpListener::bind(&addr)
-        .await
-        .unwrap();
+    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
     println!("XQlyte API Server started on http://{}", addr);
     axum::serve(listener, app).await.unwrap();
 }
@@ -251,16 +267,19 @@ async fn handle_can_pay(
 
             (StatusCode::OK, Json(result))
         }
-        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, Json(PaymentConfidenceResult {
-            status: PaymentStatus::Unknown,
-            confidence_score: 0,
-            best_route: None,
-            best_asset: None,
-            reason: "RPC communication failure.".to_string(),
-            technical_reason: "Internal connection error".to_string(),
-            suggested_fix: "Check your local RPC daemon health.".to_string(),
-            risk_factors: vec![],
-        })),
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(PaymentConfidenceResult {
+                status: PaymentStatus::Unknown,
+                confidence_score: 0,
+                best_route: None,
+                best_asset: None,
+                reason: "RPC communication failure.".to_string(),
+                technical_reason: "Internal connection error".to_string(),
+                suggested_fix: "Check your local RPC daemon health.".to_string(),
+                risk_factors: vec![],
+            }),
+        ),
     }
 }
 
@@ -289,15 +308,18 @@ async fn handle_diagnose(
 
     match sdk.diagnose_failure(req, None, None).await {
         Ok(diag) => (StatusCode::OK, Json(diag)),
-        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, Json(FailureDiagnostics {
-            failure_category: FailureCategory::Unknown,
-            human_reason: "Failed to query diagnostics".to_string(),
-            technical_reason: "RPC connection error".to_string(),
-            suggested_fix: "Retry request".to_string(),
-            retry_strategy: "Immediate retry".to_string(),
-            failing_hop: None,
-            failing_asset: None,
-        })),
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(FailureDiagnostics {
+                failure_category: FailureCategory::Unknown,
+                human_reason: "Failed to query diagnostics".to_string(),
+                technical_reason: "RPC connection error".to_string(),
+                suggested_fix: "Retry request".to_string(),
+                retry_strategy: "Immediate retry".to_string(),
+                failing_hop: None,
+                failing_asset: None,
+            }),
+        ),
     }
 }
 
@@ -314,8 +336,20 @@ async fn handle_confidence_score(
     let sdk = XqlyteClient::new(mock_client);
 
     match sdk.confidence_score(payload).await {
-        Ok((score, risk_factors)) => (StatusCode::OK, Json(ScoreResponse { score, risk_factors })),
-        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, Json(ScoreResponse { score: 0, risk_factors: vec![] })),
+        Ok((score, risk_factors)) => (
+            StatusCode::OK,
+            Json(ScoreResponse {
+                score,
+                risk_factors,
+            }),
+        ),
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ScoreResponse {
+                score: 0,
+                risk_factors: vec![],
+            }),
+        ),
     }
 }
 
@@ -332,12 +366,22 @@ async fn handle_best_asset(
     let sdk = XqlyteClient::new(mock_client);
 
     match sdk.best_asset(payload).await {
-        Ok((asset, confidence, reason)) => (StatusCode::OK, Json(BestAssetResponse { asset, confidence, reason })),
-        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, Json(BestAssetResponse {
-            asset: "".to_string(),
-            confidence: 0,
-            reason: "RPC error".to_string(),
-        })),
+        Ok((asset, confidence, reason)) => (
+            StatusCode::OK,
+            Json(BestAssetResponse {
+                asset,
+                confidence,
+                reason,
+            }),
+        ),
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(BestAssetResponse {
+                asset: "".to_string(),
+                confidence: 0,
+                reason: "RPC error".to_string(),
+            }),
+        ),
     }
 }
 
@@ -354,12 +398,26 @@ async fn handle_best_route(
     let sdk = XqlyteClient::new(mock_client);
 
     match sdk.best_route(payload).await {
-        Ok((route, score, reason)) => (StatusCode::OK, Json(BestRouteResponse { route, score, reason })),
-        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, Json(BestRouteResponse {
-            route: RouteSummary { hops: vec![], total_fee: 0.0, total_expiry: 0 },
-            score: 0,
-            reason: "RPC error".to_string(),
-        })),
+        Ok((route, score, reason)) => (
+            StatusCode::OK,
+            Json(BestRouteResponse {
+                route,
+                score,
+                reason,
+            }),
+        ),
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(BestRouteResponse {
+                route: RouteSummary {
+                    hops: vec![],
+                    total_fee: 0.0,
+                    total_expiry: 0,
+                },
+                score: 0,
+                reason: "RPC error".to_string(),
+            }),
+        ),
     }
 }
 
@@ -368,15 +426,16 @@ async fn handle_route_analysis(
     params: Option<Query<RouteParams>>,
 ) -> (StatusCode, Json<RouteAnalysis>) {
     let params_val = params.map(|Query(p)| p);
-    let scenario = get_scenario_from_params(
-        params_val.as_ref().and_then(|p| p.scenario.clone()),
-        None,
-    );
+    let scenario =
+        get_scenario_from_params(params_val.as_ref().and_then(|p| p.scenario.clone()), None);
     let mock_client = MockFiberRpcClient::new(scenario);
     let sdk = XqlyteClient::new(mock_client);
 
     let req = PaymentRequest {
-        sender: params_val.as_ref().and_then(|p| p.sender.clone()).unwrap_or_else(|| "alice".to_string()),
+        sender: params_val
+            .as_ref()
+            .and_then(|p| p.sender.clone())
+            .unwrap_or_else(|| "alice".to_string()),
         receiver: to,
         amount: params_val.as_ref().and_then(|p| p.amount).unwrap_or(100.0),
         asset: "USDT".to_string(),
@@ -385,10 +444,13 @@ async fn handle_route_analysis(
 
     match sdk.analyze_route(req).await {
         Ok(analysis) => (StatusCode::OK, Json(analysis)),
-        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, Json(RouteAnalysis {
-            route_score: 0,
-            hops: vec![],
-        })),
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(RouteAnalysis {
+                route_score: 0,
+                hops: vec![],
+            }),
+        ),
     }
 }
 
@@ -397,22 +459,23 @@ async fn handle_asset_analysis(
     params: Option<Query<AssetParams>>,
 ) -> (StatusCode, Json<AssetAnalysis>) {
     let params_val = params.map(|Query(p)| p);
-    let scenario = get_scenario_from_params(
-        params_val.as_ref().and_then(|p| p.scenario.clone()),
-        None,
-    );
+    let scenario =
+        get_scenario_from_params(params_val.as_ref().and_then(|p| p.scenario.clone()), None);
     let mock_client = MockFiberRpcClient::new(scenario);
     let sdk = XqlyteClient::new(mock_client);
 
     match sdk.analyze_asset(&asset).await {
         Ok(analysis) => (StatusCode::OK, Json(analysis)),
-        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, Json(AssetAnalysis {
-            asset,
-            is_supported: false,
-            liquidity: 0.0,
-            swap_provider_available: false,
-            average_fee: 0.0,
-        })),
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(AssetAnalysis {
+                asset,
+                is_supported: false,
+                liquidity: 0.0,
+                swap_provider_available: false,
+                average_fee: 0.0,
+            }),
+        ),
     }
 }
 
@@ -465,7 +528,7 @@ async fn handle_topology_nodes(
 ) -> (StatusCode, Json<Vec<NodeData>>) {
     let scenario = get_scenario_from_params(params.scenario, params.payment_id);
     let mock_client = MockFiberRpcClient::new(scenario);
-    
+
     let node_ids = vec!["alice", "bob", "nodeA", "nodeB", "nodeC", "node_offline"];
     let mut nodes = Vec::new();
     for id in node_ids {
@@ -481,7 +544,7 @@ async fn handle_topology_channels(
 ) -> (StatusCode, Json<Vec<ChannelData>>) {
     let scenario = get_scenario_from_params(params.scenario, params.payment_id);
     let mock_client = MockFiberRpcClient::new(scenario);
-    
+
     let node_ids = vec!["alice", "nodeA", "nodeB", "nodeC"];
     let mut channels = Vec::new();
     for id in node_ids {
@@ -492,6 +555,6 @@ async fn handle_topology_channels(
     // Deduplicate channels by channel_id
     channels.sort_by(|a, b| a.channel_id.cmp(&b.channel_id));
     channels.dedup_by(|a, b| a.channel_id == b.channel_id);
-    
+
     (StatusCode::OK, Json(channels))
 }

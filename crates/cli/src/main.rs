@@ -6,7 +6,10 @@ use sdk_rust::XqlyteClient;
 use std::process;
 
 #[derive(Parser, Debug)]
-#[command(name = "xqlyte", about = "XQlyte Payment Diagnostics & Confidence Engine CLI")]
+#[command(
+    name = "xqlyte",
+    about = "XQlyte Payment Diagnostics & Confidence Engine CLI"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -43,7 +46,13 @@ enum Commands {
         #[arg(long, short = 'f', default_value = "alice", alias = "sender")]
         from: String,
 
-        #[arg(long, short = 't', default_value = "bob", alias = "receiver", alias = "peer")]
+        #[arg(
+            long,
+            short = 't',
+            default_value = "bob",
+            alias = "receiver",
+            alias = "peer"
+        )]
         to: String,
 
         #[arg(long, short = 'n', default_value = "100.0")]
@@ -172,7 +181,10 @@ async fn main() {
                         if !res.risk_factors.is_empty() {
                             println!("\nRisk Factors:");
                             for rf in &res.risk_factors {
-                                println!("- [{}] Severity: {} | {}", rf.category, rf.severity, rf.description);
+                                println!(
+                                    "- [{}] Severity: {} | {}",
+                                    rf.category, rf.severity, rf.description
+                                );
                             }
                         }
                     }
@@ -291,8 +303,18 @@ async fn main() {
                         println!("{}", serde_json::to_string_pretty(&res).unwrap());
                     } else {
                         println!("Asset: {}", res.asset);
-                        println!("Supported Natively: {}", if res.is_supported { "Yes" } else { "No" });
-                        println!("Swap Provider Available: {}", if res.swap_provider_available { "Yes" } else { "No" });
+                        println!(
+                            "Supported Natively: {}",
+                            if res.is_supported { "Yes" } else { "No" }
+                        );
+                        println!(
+                            "Swap Provider Available: {}",
+                            if res.swap_provider_available {
+                                "Yes"
+                            } else {
+                                "No"
+                            }
+                        );
                         println!("Swap Liquidity: {}", res.liquidity);
                         println!("Swap Average Fee: {}", res.average_fee);
                     }
@@ -341,11 +363,7 @@ async fn main() {
             }
         }
 
-        Commands::Node {
-            id,
-            scenario,
-            json,
-        } => {
+        Commands::Node { id, scenario, json } => {
             let sc = parse_scenario(&scenario);
             let client = MockFiberRpcClient::new(sc);
             let sdk = XqlyteClient::new(client);
@@ -359,7 +377,10 @@ async fn main() {
                         println!("Uptime: {:.1}%", node.uptime * 100.0);
                         println!("Peer Count: {}", node.peer_count);
                         println!("Stability Score: {}/100", node.stability_score);
-                        println!("Status: {}", if node.is_online { "Online" } else { "Offline" });
+                        println!(
+                            "Status: {}",
+                            if node.is_online { "Online" } else { "Offline" }
+                        );
                     }
                 }
                 Err(e) => {

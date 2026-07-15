@@ -14,7 +14,9 @@ fn get_cli_bin() -> std::path::PathBuf {
 fn test_cli_can_pay_human() {
     let bin = get_cli_bin();
     let output = Command::new(&bin)
-        .args(&["can-pay", "-f", "alice", "-t", "bob", "-n", "100.0", "-a", "USDT"])
+        .args(&[
+            "can-pay", "-f", "alice", "-t", "bob", "-n", "100.0", "-a", "USDT",
+        ])
         .output()
         .expect("failed to execute cli");
 
@@ -29,7 +31,9 @@ fn test_cli_can_pay_human() {
 fn test_cli_can_pay_json() {
     let bin = get_cli_bin();
     let output = Command::new(&bin)
-        .args(&["can-pay", "-f", "alice", "-t", "bob", "-n", "100.0", "-a", "USDT", "--json"])
+        .args(&[
+            "can-pay", "-f", "alice", "-t", "bob", "-n", "100.0", "-a", "USDT", "--json",
+        ])
         .output()
         .expect("failed to execute cli");
 

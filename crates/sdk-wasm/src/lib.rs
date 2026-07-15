@@ -26,7 +26,10 @@ pub async fn can_pay(request: JsValue, scenario: String) -> Result<JsValue, JsVa
     let client = MockFiberRpcClient::new(sc);
     let sdk = XqlyteClient::new(client);
 
-    let res = sdk.can_pay(req).await.map_err(|e| JsValue::from_str(&format!("{:?}", e)))?;
+    let res = sdk
+        .can_pay(req)
+        .await
+        .map_err(|e| JsValue::from_str(&format!("{:?}", e)))?;
     to_value(&res).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
@@ -51,7 +54,10 @@ pub async fn confidence_score(request: JsValue, scenario: String) -> Result<JsVa
     let client = MockFiberRpcClient::new(sc);
     let sdk = XqlyteClient::new(client);
 
-    let res = sdk.confidence_score(req).await.map_err(|e| JsValue::from_str(&format!("{:?}", e)))?;
+    let res = sdk
+        .confidence_score(req)
+        .await
+        .map_err(|e| JsValue::from_str(&format!("{:?}", e)))?;
     to_value(&res).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
@@ -62,7 +68,10 @@ pub async fn best_asset(request: JsValue, scenario: String) -> Result<JsValue, J
     let client = MockFiberRpcClient::new(sc);
     let sdk = XqlyteClient::new(client);
 
-    let res = sdk.best_asset(req).await.map_err(|e| JsValue::from_str(&format!("{:?}", e)))?;
+    let res = sdk
+        .best_asset(req)
+        .await
+        .map_err(|e| JsValue::from_str(&format!("{:?}", e)))?;
     to_value(&res).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
@@ -73,7 +82,10 @@ pub async fn best_route(request: JsValue, scenario: String) -> Result<JsValue, J
     let client = MockFiberRpcClient::new(sc);
     let sdk = XqlyteClient::new(client);
 
-    let res = sdk.best_route(req).await.map_err(|e| JsValue::from_str(&format!("{:?}", e)))?;
+    let res = sdk
+        .best_route(req)
+        .await
+        .map_err(|e| JsValue::from_str(&format!("{:?}", e)))?;
     to_value(&res).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
@@ -84,7 +96,10 @@ pub async fn analyze_route(request: JsValue, scenario: String) -> Result<JsValue
     let client = MockFiberRpcClient::new(sc);
     let sdk = XqlyteClient::new(client);
 
-    let res = sdk.analyze_route(req).await.map_err(|e| JsValue::from_str(&format!("{:?}", e)))?;
+    let res = sdk
+        .analyze_route(req)
+        .await
+        .map_err(|e| JsValue::from_str(&format!("{:?}", e)))?;
     to_value(&res).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
@@ -94,6 +109,9 @@ pub async fn analyze_asset(asset: String, scenario: String) -> Result<JsValue, J
     let client = MockFiberRpcClient::new(sc);
     let sdk = XqlyteClient::new(client);
 
-    let res = sdk.analyze_asset(&asset).await.map_err(|e| JsValue::from_str(&format!("{:?}", e)))?;
+    let res = sdk
+        .analyze_asset(&asset)
+        .await
+        .map_err(|e| JsValue::from_str(&format!("{:?}", e)))?;
     to_value(&res).map_err(|e| JsValue::from_str(&e.to_string()))
 }
