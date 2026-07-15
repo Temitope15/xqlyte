@@ -46,7 +46,7 @@ export default function Navbar() {
         {/* Right CTA */}
         <div className="flex items-center gap-3">
           <a
-            href="https://github.com/user/xqlyte"
+            href="https://github.com/Temitope15/xqlyte"
             target="_blank"
             rel="noopener noreferrer"
             className="hidden cursor-pointer text-[15px] text-white transition-colors hover:text-foreground sm:block"

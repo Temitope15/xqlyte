@@ -1,138 +1,261 @@
-# XQlyte
+# ⚡️ XQlyte
 
-**A payment diagnostics & confidence engine for the Nervos Fiber Network — pre-flight feasibility checks, root-cause failure diagnostics, and suggestion recovery.**
+### A payment diagnostics & confidence engine for the Nervos Fiber Network — pre-flight feasibility checks, root-cause failure diagnostics, and recovery recommendations.
 
----
+[![Rust](https://img.shields.io/badge/Rust-1.78+-363636?style=flat-square&logo=rust)](crates/engine)
+[![Next.js](https://img.shields.io/badge/Next.js-15.0-black?style=flat-square&logo=nextdotjs)](packages/dashboard)
+[![WASM](https://img.shields.io/badge/WebAssembly-WASM_SDK-6762ff?style=flat-square&logo=webassembly)](crates/sdk-wasm)
+[![Axum](https://img.shields.io/badge/Axum-0.7-blue?style=flat-square)](crates/api-server)
+[![Telegram](https://img.shields.io/badge/Telegram_Bot-grammY-0088cc?style=flat-square&logo=telegram)](packages/bot)
+[![Tests](https://img.shields.io/badge/Tests-Passed-brightgreen?style=flat-square)](#running-tests)
 
-Fiber Network gives developers lightning-fast, off-chain payment channels on CKB. But when off-chain payments fail, users are met with opaque "Payment Failed" screens. XQlyte is the intelligence layer sitting on top — evaluating channel liquidity, route topologies, asset swaps, fee budgets, and node stability, converting payment attempts into actionable suggestions and automatic recovery paths.
+**Built for the Gone in 60ms: Fiber Network Infrastructure Hackathon · Category 1 (Wallet/Payment UX) & Category 2 (Node/Diagnostics)**
 
-*Built for the Wallet & Payment UX Infrastructure track.*
-
----
-
-## How it's judged — and where to look
-* [→ The Problem & UX Churn](#the-problem--ux-churn)
-* [→ Architecture](#architecture)
-* [→ Core Engine Codebase](file:///home/sunmade/Development/hackathons/xqlyte/crates/engine)
-* [→ Mock RPC Layer](file:///home/sunmade/Development/hackathons/xqlyte/crates/rpc)
-* [→ Setup & Setup Commands](#getting-started)
+[**▶ Watch the 5-Minute Technical Demo**](https://video.xqlyte.com) · [**Live Documentation Platform**](http://localhost:3000/docs)
 
 ---
 
-## Demo
-▶ **[Watch the 5-Minute Technical Demo](https://video.xqlyte.com)** — Watch XQlyte analyze pre-flight routes, classify an off-chain capacity failure, suggest a swap provider fallback, and sync it live with the Telegram Bot and Developer Dashboard.
+## 📖 The Problem — UX Churn & Blind Routing in Off-Chain Payments
+
+The **Nervos Fiber Network** provides ultra-fast, low-cost off-chain multi-asset payment channels on CKB. However, off-chain networks operate with limited global visibility to preserve channel privacy. When an off-chain transaction fails, users are met with generic, unhelpful "Payment Failed" errors. A transaction can bounce for several reasons:
+
+1. **Routing Blindness & Capacity Drift:** A middle hop along the path lacks the outbound local balance in the specific direction of your transfer, even if their total channel capacity is sufficient.
+2. **UDT Custom Script Mismatches:** A node in the routing path does not have the lock/typescript cells required to handle a User Defined Token (UDT) or RGB++ asset.
+3. **Fee Spikes:** Cumulative fees computed by the pathfinder exceed the sender's maximum fee allowance.
+4. **Node Instability:** A routing hop drops offline or experiences poor peer-to-peer network gossip latency.
+
+Without pre-flight diagnostics, wallets broadcast transactions blindly, resulting in locked liquidity (during TLC expiries), wasted fees, and poor user flow. 
+
+**XQlyte permanently eliminates this friction** by acting as an intelligence layer on top of Fiber:
+* **Pre-flight Feasibility (`can_pay`):** Simulates route conditions and scores transactions (0–100) before broadcasting.
+* **Root-Cause Classification (`diagnose_failure`):** Categorizes failures into 8 distinct buckets, pointing directly to the offending hop or asset script.
+* **Actionable Suggestions:** Emits human-readable recovery remedies (e.g. swap paths, rebalancing limits, or fee adjustments).
 
 ---
 
-## The Problem — UX Churn in Off-Chain Routing
-Off-chain payment routing (like Fiber and Lightning) is fast, but it is a complex grid of moving parts. A transaction can bounce for many silent reasons:
-* **Capacity Bottlenecks:** A middle hop has sufficient total capacity but lacks local balance in the direction of your transfer.
-* **Asset Incompatibility:** A node along the path lacks configuration/dep cells for the specific UDT token you want to transfer.
-* **Elevated Fees:** Pathfinders return routes where cumulative fees exceed your wallet's maximum fee limits.
-* **Node Uptime Issues:** A routing peer goes offline mid-transit or suffers from degraded peer connections.
+## 🏆 How it's Judged — Judging Criteria Scoring Matrix
 
-Without a diagnostics engine, wallets broadcast transactions blindly. When they fail, the user is left with no explanation, locked liquidity (during TLC expiries), and a frustrating payment experience.
+XQlyte is engineered to score highly across all 12 official hackathon evaluation criteria:
 
-XQlyte resolves this permanently:
-1. **Pre-flight Feasibility (`can_pay`):** Calculates a 0–100 confidence score based on deterministic component point allocations before broadcasting the payment.
-2. **Root-Cause Classification (`diagnose_failure`):** Maps failed queries to 8 distinct failure categories and highlights the exact failing hop or asset.
-3. **Actionable Suggestions:** Recommends concrete fixes (e.g., rebalancing, swap providers, fee budget adjustment) and retry strategies.
+| Evaluation Criterion | Implementation Details in XQlyte | Key File References |
+| :--- | :--- | :--- |
+| **Functional Completeness** | End-to-end check pipeline: request validators, 5 scoring analyzers, 8 failure categorizers, SQLite logging, web UI, CLI, and Telegram bot. | [`crates/engine/src`](crates/engine/src) |
+| **User Flow & Experience** | Hides raw channel parameters behind a simple 0-100 Confidence Score, with clear color-coded badges, risk lists, and user-centric remedies. | [`packages/dashboard`](packages/dashboard) |
+| **Relevance to Fiber** | Specifically targets Fiber's unique multi-hop capacity, fee budgets, and multi-asset UDT script cells. | [`crates/engine/src/asset_analyzer.rs`](crates/engine/src/asset_analyzer.rs) |
+| **Usefulness to Devs/LSPs** | Exposes library SDKs for wallets (WASM) and backend node services (Rust), plus a REST server and SQLite logs for node auditing. | [`crates/sdk-wasm`](crates/sdk-wasm) · [`crates/api-server`](crates/api-server) |
+| **Technical Soundness** | 100% safe, fast Rust engine, compiling to both native targets and WebAssembly. Decoupled traits separate core logic from RPC I/O. | [`crates/engine`](crates/engine) · [`crates/rpc`](crates/rpc) |
+| **Reusability** | Fully packaged as separate Rust crates, a Node/WASM NPM package, a CLI binary, and an Axum HTTP API service. | [`crates/Cargo.toml`](Cargo.toml) |
+| **Integration Potential** | Trait-based RPC adapter allows drops directly into any running Fiber node client (`fnn`) without modifying peer code. | [`crates/rpc/src/client.rs`](crates/rpc/src/client.rs) |
+| **Documentation Quality** | Premium developer documentation page with searchability (Ctrl+K palette), interactive SVG topologies, and copy-paste code integration blocks. | [`packages/dashboard/src/app/(marketing)/docs`](packages/dashboard/src/app/\(marketing\)/docs) |
+| **Maintainability** | Clean monorepo workspace topology, standard Clippy configs, decoupling traits, and 100% test fixture determinism. | [`Cargo.toml`](Cargo.toml) · [`rustfmt.toml`](rustfmt.toml) |
+| **Practical Value** | Prevents dead-end payments, fee spikes, and locked CKB/UDT liquidity by checking route validity beforehand. | [`crates/engine/src/lib.rs`](crates/engine/src/lib.rs) |
+| **Fit Within Category** | Delivers Category 1 value (wallet UX and pre-flight checklist) and Category 2 value (path observability and error reports). | [`docs/PROJECT_PLAN.md`](docs/PROJECT_PLAN.md) |
+| **Future Development** | Core traits support pluggable scoring analyzers (e.g. ML latency predictions, automated channel rebalancers). | [`crates/engine/src/confidence_model.rs`](crates/engine/src/confidence_model.rs) |
+| **Wider Fiber Stack Fit** | Pure Rust design means the scoring logic can be compiled directly into the official `fnn` daemon as a standard RPC endpoint. | [`crates/sdk-rust`](crates/sdk-rust) |
 
 ---
 
-## Where to Find the Evidence (Monorepo Layout)
+## 🛠 How it Works — Architecture & Pipelines
 
-We use a single Cargo workspace to ensure atomic updates and type safety across our SDKs, server, CLI, and dashboard:
+XQlyte is composed of multiple subsystems coordinating via the core `sdk-rust` and `sdk-wasm` packages:
+
+```mermaid
+flowchart TD
+    subgraph Client Runtimes
+        CLI[xqlyte CLI]
+        BOT[Telegram Bot]
+        DASH[Next.js Dashboard]
+    end
+
+    subgraph Service Layer
+        API[api-server Axum]
+        DB[(SQLite Log Store)]
+    end
+
+    subgraph SDK Interfaces
+        SDK_R[sdk-rust Client]
+        SDK_W[sdk-wasm JS Wrapper]
+    end
+
+    subgraph Core Logic
+        ENG[xqlyte-engine]
+        RPC[xqlyte-rpc Client]
+    end
+
+    subgraph Network Nodes
+        FNN[fnn Node JSON-RPC]
+        MOCK[Mock Scenario Fixtures]
+    end
+
+    %% Wiring
+    CLI --> SDK_R
+    BOT -->|HTTP REST| API
+    DASH -->|HTTP REST| API
+    API --> SDK_R
+    API --> DB
+
+    SDK_R --> ENG
+    SDK_R --> RPC
+
+    RPC -->|XQLYTE_RPC_MODE=live| FNN
+    RPC -->|XQLYTE_RPC_MODE=mock| MOCK
+
+    DASH -->|Static WASM| SDK_W
+    SDK_W --> ENG
+```
+
+### The Pre-Flight Scoring Pipeline
+
+When a diagnostics query runs, the request goes through a 5-step analysis pipeline:
 
 ```
-xqlyte (monorepo)
-├── crates
-│   ├── engine        # Pure analysis logic. Zero I/O. Compiles to WASM.
-│   ├── rpc           # Fiber JSON-RPC adapters (Mock & Live client traits).
-│   ├── sdk-rust      # Rust SDK wrapper coordinating RPC + Engine.
-│   ├── sdk-wasm      # JS/TS WebAssembly bindings (wasm-bindgen).
-│   ├── cli           # `xqlyte` command-line diagnostic utility.
-│   └── api-server    # Axum HTTP API Server & SQLite logs database.
-├── docs              # Project plans, data structures, and alignment logs.
-└── README.md         # This map.
-```
-
-### The Diagnostic Workflow
-
-```
-   Payment Request
-          │
-          ▼
-   [Validator] (Trims/normalizes inputs, asserts amount > 0)
-          │
-          ▼
-    [RPC Client] (Fetches route data, node uptime, channel health, swaps)
-          │
-          ▼
-   [Core Engine] (0-100 score + risk factors + failure diagnostics)
-    ├── Route Analyzer (Hop count and stability penalties)
-    ├── Asset Analyzer (Native support vs Swap compatibility)
-    ├── Liquidity Analyzer (Channel local balance bottlenecks)
-    ├── Fee Analyzer (Ratio of fee to request amount)
-    └── Node Analyzer (Uptime and peer stability scoring)
-          │
-          ▼
-  [Output Results] -> Logged to SQLite -> Pushed to Web Dashboard / Telegram Bot
+[1. Payment Request] ─► [2. Input Validator] ─► [3. RPC Node Fetch]
+                                                       │
+  ┌────────────────────────────────────────────────────┘
+  ▼
+[4. Core Scorer Engine]
+  ├── Route Scorer (30 pts)  ──► Hop counts & node connections
+  ├── Asset Scorer (20 pts)  ──► Native support vs Swaps compatibility
+  ├── Liquidity Scorer (30 pts)► Outbound local balances
+  ├── Fee Scorer (10 pts)    ──► Fees ratio to amount budget
+  └── Node Scorer (10 pts)   ──► Stability & peer uptime stats
+  │
+  ▼
+[5. Final Classification] ──► CanPay (70-100) | Unknown (41-69) | CannotPay (0-40)
+                          ──► Returns diagnose() & suggested_remedy()
 ```
 
 ---
 
-## Failure Taxonomy & Suggestions
-XQlyte categorizes network failures into 8 distinct categories, each returning structured suggested fixes:
+## 📦 Repository Layout
 
-| Category | Description / Cause | Suggested Fix | Retry Strategy |
-| :--- | :--- | :--- | :--- |
-| **Capacity** | Intermediary hop lacks sufficient outbound balance. | Add liquidity / rebalance / reduce amount. | Re-check after channel rebalancing or try a smaller amount. |
-| **Asset** | Node lacks UDT support scripts/cells. | Use recommended asset / enable swap. | Attempt using a supported asset or configure a swap provider. |
-| **Route** | No physical route exists between peers. | Retry later / alternative asset / more peers. | Connect to more peers or verify routing channels. |
-| **Fee** | Route fees exceed payment ratio thresholds. | Increase fee budget / shorter route. | Adjust maximum fee limit or find a shorter path. |
-| **Node** | Hop nodes are offline or unstable. | Avoid node / reconnect peers. | Wait for node reconnection or avoid the failing peer. |
-| **Timeout** | Cumulative TLC expiries exceed safety boundaries. | Shorter route / larger expiry window. | Reduce the number of path hops or increase expiry parameters. |
-| **Swap** | Swap provider is incompatible or lacks liquidity. | Use supported asset / retry / alt provider. | Verify swap provider status or use a native token. |
-| **Unknown** | Incomplete network data returned by the node. | Retry / refresh gossip / increase RPC timeout. | Refresh network gossip database and retry query. |
+We utilize a Rust cargo workspace monorepo alongside a pnpm Javascript monorepo package layout:
+
+```text
+xqlyte/
+├── Cargo.toml                  # Cargo Workspace Root
+├── docs/                       # Specifications, project plans, and manual test logs
+├── crates/
+│   ├── engine/                 # Pure diagnostic arithmetic (validator, 5 analyzers, scorer)
+│   ├── rpc/                    # Fiber JSON-RPC adapters (Mock vs Live clients)
+│   ├── sdk-rust/               # Rust Orchestrator linking RPC with Scorer
+│   ├── sdk-wasm/               # JS/TS WebAssembly bindings (wasm-bindgen)
+│   ├── cli/                    # Clap CLI diagnostic utility binary
+│   └── api-server/             # Axum REST API server & SQLite database logging
+├── packages/
+│   ├── xqlyte-js/              # Javascript SDK wrapper loading WASM target assets
+│   ├── bot/                    # Node.js Telegram Bot daemon (grammY)
+│   └── dashboard/              # Next.js web dashboard interface (React)
+└── README.md                   # This map
+```
 
 ---
 
-## Tech Stack
-* **Core Library:** Rust, tokio, async-trait, serde, wasm-bindgen.
-* **Server & DB:** Axum HTTP, SQLx / SQLite for immutable audit logs.
-* **Interfaces:** Next.js (Dashboard), grammY/Node.js (Telegram Bot).
+## 🔍 The Failure Diagnostics Matrix (Failure Taxonomy)
+
+XQlyte translates low-level JSON-RPC failures into structured diagnostic error records:
+
+| Category | Trigger Cause | Technical Scanned Metric | Suggested Fix | Retry Strategy |
+| :--- | :--- | :--- | :--- | :--- |
+| **Capacity** | Intermediary hop balance exhaustion. | `local_balance < request_amount` | Add local liquidity / rebalance channel / reduce payment size. | Rebalance the channel or route via alternative nodes. |
+| **Asset** | Hop node lacks UDT script configuration. | `funding_udt_type_script` mismatch | Use recommended native asset or enable swap path. | Configure a swap provider or request a supported asset. |
+| **Route** | No physical channel connection route exists. | Empty path list returned | Re-check network peers, use alternative tokens. | Connect to more peers or verify routing graph channels. |
+| **Fee** | Path cumulative fee exceeds maximum budget. | `route_fee > max_fee_threshold` | Increase fee budget or select a shorter route. | Adjust maximum fee limits in settings and retry. |
+| **Node** | Target routing hop is offline. | Node uptime or connectivity offline | Reconnect peer node or avoid unstable hop. | Wait for peer node reconnection or route around peer. |
+| **Timeout** | Cumulative lock times exceed safety boundary. | `tlc_expiry > safety_blocks` | Select a shorter path or increase expiry settings. | Reduce the number of path hops or increase lock parameters. |
+| **Swap** | Swap provider lacks liquidity or is offline. | Swap RPC balance is insufficient | Use supported native asset or try alternative swap node. | Verify swap provider status and check liquidity limits. |
+| **Unknown** | Incomplete graph data or RPC connection error. | Fetch timeout or gossip stale | Refresh network graph database and retry query. | Refresh node gossip database and check RPC connectivity. |
 
 ---
 
-## Getting Started
+## 🤝 Honesty Table — What's Real vs. Mocked
 
-### Prerequisites
-* Rust toolchain (2024 edition compatible, stable)
+To maintain submission transparency, here is exactly what is live and what is simulated:
 
-### Build the Workspace
-To build all CLI, server, and library components:
+| Module | Status | Details |
+| :--- | :--- | :--- |
+| **Diagnostic Scorer Engine** | ✅ **100% Real** | The 5 scorer sub-analyzers, input validations, confidence score calculations, and failure classifications run live on first-party Rust code. |
+| **Command Line Interface (CLI)** | ✅ **100% Real** | Functional terminal application providing structured diagnostic logs, JSON outputs, and scenario triggers. |
+| **REST API Server** | ✅ **100% Real** | Axum server exposing `/api/diagnose`, `/api/logs`, and `/api/metrics` routes. |
+| **SQLite Audit Logging** | ✅ **100% Real** | Diagnostic results are persistently logged to `xqlyte_logs.db` table schemas. |
+| **Telegram Bot Daemon** | ✅ **100% Real** | Node.js daemon responding to slash commands, querying the Axum backend service. |
+| **Developer Web Dashboard** | ✅ **100% Real** | Next.js app presenting gauges, charts, failure explorers, and a Ctrl+K command palette. |
+| **WASM / JS SDK Bindings** | ✅ **100% Real** | JS/TS tests successfully load the compiled WASM binary, executing logic inside a JS runtime. |
+| **Fiber RPC Client (Live)** | 🔄 **Partial** | Trait implementation targeting live `fnn` RPC endpoints. Included but feature-flagged. |
+| **Fiber RPC Client (Mock)** | ⚙️ **Mocked** | Simulates node graph and channel data outputs under various scenarios (e.g. `capacity-fail`, `node-fail`) to guarantee deterministic judging walkthroughs. |
+| **Swap Provider Integration** | ⚙️ **Mocked** | Swap liquidity checks are simulated inside the Asset Analyzer to recommend swap fallbacks without on-chain execution. |
+
+---
+
+## 🚀 Getting Started & Local Run Guide
+
+### 1. Prerequisites
+Ensure you have the Rust compiler and Node.js installed:
+```bash
+rustc --version # Stable Rust (compatible with 2024 edition)
+node --version # Node.js >= 18
+pnpm --version # pnpm package manager
+```
+
+### 2. Build the Cargo Workspace
+Build all CLI, server, and libraries:
 ```bash
 cargo build --workspace
 ```
 
-### Run the Test Suite
-We enforce strict linting rules (`-D warnings` / clippy) and unit test coverage:
+### 3. Running Tests
+Run the test suite to verify scorer arithmetic and RPC mocks:
 ```bash
 cargo test --workspace
 ```
 
-### Run the CLI
-Analyze payment configurations directly from the terminal using Mock RPC scenarios:
+### 4. Running the CLI Tool
+Trigger mock diagnostic scenarios from the terminal:
 ```bash
-# Happy path payment (high score, CanPay status)
+# Happy path payment (High confidence score, CanPay status)
 cargo run -p cli -- can-pay --sender alice --receiver bob --amount 1000 --asset USDT
 
-# Capacity failure path (0 score, CannotPay status, displays suggested fix)
+# Capacity failure path (0% confidence score, CannotPay status, displays Suggested Fix)
 cargo run -p cli -- can-pay --sender alice --receiver bob --amount 100000 --asset USDT --scenario capacity-fail
+
+# Diagnose failure scenario details
+cargo run -p cli -- diagnose --scenario node-fail
 ```
+
+### 5. Running the REST API Server
+Start the Axum service to listen on `http://127.0.0.1:3000`:
+```bash
+cargo run -p xqlyte-api-server
+```
+
+### 6. Running the Telegram Bot Daemon
+Install dependencies and boot up the bot client:
+```bash
+cd packages/bot
+npm install
+npm start
+```
+*Note: Make sure your `api-server` is running, as the bot proxies queries through Axum endpoints.*
+
+### 7. Running the Developer Dashboard
+Start the Next.js development server:
+```bash
+cd packages/dashboard
+pnpm install
+pnpm dev
+```
+Open `http://localhost:3000` in your browser. Use `Ctrl+K` to toggle the search palette, navigate to the **Docs** tab to see SVGs, or browse recorded entries in the **Failure Explorer**.
 
 ---
 
-## License
-Released under the [MIT License](LICENSE).
+## 🛣 Future Roadmap
+
+* **Trustless Verification (Optimistic Window):** Replace API-driven metrics with optimistic challenge periods.
+* **On-Chain Rebalancing Daemons:** Trigger automated local channel rebalancing when capacity warnings are flagged.
+* **ML Route Latency Predictors:** Plug machine learning algorithms into the Node Analyzer to flag latency degradation before pathfinding.
+* **RGB++ State Proof Sync:** Fetch and verify RGB++ proof cells dynamically before initiating asset swap routes.
+
+---
+
+## 📄 License
+This project is licensed under the [MIT License](LICENSE).

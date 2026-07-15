@@ -252,7 +252,7 @@ export default function DocsPage() {
             </div>
           </div>
 
-          {/* Duro-Inspired Bento Grid */}
+          {/* Navigation Bento Grid */}
           <h2 id="explore-docs" className="font-inter text-2xl sm:text-3xl font-bold text-white border-b border-white/5 pb-2 pt-10 mb-6">
             Explore the Documentation
           </h2>
